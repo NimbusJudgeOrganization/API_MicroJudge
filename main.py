@@ -44,6 +44,7 @@ def judge():
         os.system(f"cp {UPLOAD_FOLDER}/{filename} {JUDGE_FOLDER}/{filename}")
         
         # run judge
+        os.system(f'./{JUDGE_FOLDER}/calibreitor.sh {question}')
         os.system(f'./{JUDGE_FOLDER}/build-and-test.sh {fileExtention} {filename} {question} > result.txt')
         
         # clear directory
