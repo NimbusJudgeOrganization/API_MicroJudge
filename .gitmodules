@@ -1,3 +1,3 @@
-[submodule "judge"]
-	path = judge
-	url = https://github.com/NimbusJudgeOrganization/judge.git
+[submodule "JUDGE_MicroJudge"]
+	path = JUDGE_MicroJudge
+	url = https://github.com/NimbusJudgeOrganization/JUDGE_MicroJudge.git
