@@ -1,3 +1,3 @@
 [submodule "JUDGE_MicroJudge"]
-	path = JUDGE_MicroJudge
+	path = chalicelib/JUDGE_MicroJudge
 	url = https://github.com/NimbusJudgeOrganization/JUDGE_MicroJudge.git

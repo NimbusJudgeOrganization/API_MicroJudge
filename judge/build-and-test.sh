@@ -16,11 +16,20 @@ PROBLEMTEMPLATEDIR=$(realpath $3)
 RUNALL=$4
 RUNALL=${RUNALL:=no}
 
-workdirbase=$(mktemp -d)
+#workdirbase=$(mktemp -d)
+
+if [[ -e "/tmp/rwdir" ]]; then
+  rm -rf /tmp/rwdir
+fi
+
+mkdir /tmp/rwdir
+workdirbase=/tmp/rwdir
+mkdir $workdirbase/cagefiles
 workdir=$workdirbase/cagefiles/
 
 if [[ ! -e "$workdirbase" ]]; then
   echo "Could not create $workdirbase"
+  echo "Could not create workdirbase"
   exit 1
 fi
 
@@ -40,7 +49,7 @@ echo $workdirbase
 
 cd $(dirname $0)
 
-cp "$SRCCODE" $workdir/
+cp "$SRCCODE" $workdirbase/
 
 declare -a BIN
 
@@ -111,30 +120,46 @@ fi
 
 LOG "# Compiling code"
 LOG ""
-bash cage-run.sh -w $workdir -r $LANGCOMPILE $SHIELDPARAMS\
-                    -s $workdirbase/compile.log.stderr \
-                    -o $workdirbase/compile.log.stdout \
-                    -t $workdirbase/compile.log.time \
-                    -T 30\
-                    -B $workdirbase/compile.log.bwraptime &> $workdirbase/compile.log.cage-run
 
-CAGERET=$?
 
-if ! grep -q ^BIN= $workdirbase/compile.log.stdout || (( CAGERET != 0 )) ; then
-  LOG "   COMPILATION ERROR"
-  LOG ""
-  LOG "CE $workdir"
-  for f in $workdirbase/compile.log.{stdout,stderr,cage-run,time,bwraptime}; do
-    LOG "## $f"
-    LOG "$(< $f)"
-    LOG ""
-  done
-  echo "Compilation Error"
-  exit 1
+# COMPILACAO
+sh $LANGCOMPILE
+mkdir /tmp/dir
+if [[ -e $PROBLEMTEMPLATEDIR/scripts/$LANGUAGE ]]; then
+  echo BIN="main" > /tmp/dir/binfile.sh
+  cp $workdirbase/main /tmp/dir
+else 
+  echo BIN="$(basename --suffix=.$LANGUAGE $SRCCODE)" > /tmp/dir/binfile.sh
+  cp $workdirbase/"$(basename --suffix=.$LANGUAGE $SRCCODE)" /tmp/dir
 fi
-#cut -d'=' -f2 < $workdir/log.stdout
-BIN+=( $(cut -d'=' -f2 < $workdirbase/compile.log.stdout) )
-echo BIN=${BIN[0]} > $workdir/binfile.sh
+#cp $workdirbase/main /tmp/dir
+# source $workdir/binfile.sh
+#BIN="main"
+#echo "$BIN"
+#bash cage-run.sh -w $workdir -r $LANGCOMPILE $SHIELDPARAMS\
+                    #-s $workdirbase/compile.log.stderr \
+                    #-o $workdirbase/compile.log.stdout \
+                    #-t $workdirbase/compile.log.time \
+                    #-T 30\
+                    #-B $workdirbase/compile.log.bwraptime &> $workdirbase/compile.log.cage-run
+
+#CAGERET=$?
+
+# if ! grep -q ^BIN= $workdirbase/compile.log.stdout || (( CAGERET != 0 )) ; then
+#   LOG "   COMPILATION ERROR"
+#   LOG ""
+#   LOG "CE $workdir"
+#   for f in $workdirbase/compile.log.{stdout,stderr,cage-run,time,bwraptime}; do
+#     LOG "## $f"
+#     LOG "$(< $f)"
+#     LOG ""
+#   done
+#   echo "Compilation Error"
+#   exit 1
+# fi
+# #cut -d'=' -f2 < $workdir/log.stdout
+# BIN+=( $(cut -d'=' -f2 < $workdirbase/compile.log.stdout) )
+#echo BIN=${BIN[0]} > $workdir/binfile.sh
 
 LOG ""
 LOG ""
@@ -198,18 +223,36 @@ TOTALTESTS=$(ls -d $PROBLEMTEMPLATEDIR/tests/input/*|wc -l)
 function run-testinput()
 {
   local INPUT=$1
+  cp $INPUT /tmp/in
   local FILE=$(basename $INPUT)
-  bash cage-run.sh -d $workdir -i $INPUT -o $workdirbase/$FILE-team_output \
-       -s $workdirbase/$FILE-stderr $SHIELDPARAMS\
-       -r $LANGRUN \
-       -t $workdirbase/$FILE-log.timelog\
-       -T $ETL\
-       -B $workdirbase/$FILE-log.bwraptime &> $workdirbase/$FILE-log.cage-run
-  BWRAPEXITCODE=$?
-  echo $BWRAPEXITCODE > $workdirbase/$FILE-log.bwrapexitcode
+  TIMELOG=$workdirbase/$FILE-log.timelog
+  touch $TIMELOG
+  #echo "time -p -o $TIMELOG timeout $ETL $LANGRUN"
+
+  # $workdirbase/$FILE-team_output
+  #RUN="$LANGRUN $workdirbase/$FILE-team_output"
+  #cat $INPUT
+  /usr/bin/time -p -o $TIMELOG timeout $ETL $LANGRUN
+  #cat $workdirbase/$FILE-team_output
+  cat /tmp/out > $workdirbase/$FILE-team_output
+  #echo "(/usr/bin/time -p -o $TIMELOG timeout $ETL $LANGRUN) > $workdirbase/$FILE-team_output"
+  #sh $LANGRUN
+  #$BIN < $INPUT > /tmp/out
+  #time -p -o timeout $ETL sh $LANGRUN $INPUT > $workdirbase/$FILE-log.timelog # TESTANDO
+
+  # bash cage-run.sh -d $workdir -i $INPUT -o $workdirbase/$FILE-team_output \
+  #      -s $workdirbase/$FILE-stderr $SHIELDPARAMS\
+  #      -r $LANGRUN \
+  #      -t $workdirbase/$FILE-log.timelog\
+  #      -T $ETL\
+  #      -B $workdirbase/$FILE-log.bwraptime &> $workdirbase/$FILE-log.cage-run
+  # BWRAPEXITCODE=$?
+  # echo $BWRAPEXITCODE > $workdirbase/$FILE-log.bwrapexitcode
 }
 
 JOBSCOUNT=0
+ALLOWPARALLELTEST="n"
+
 NPROC=$(nproc)
 [[ "$ALLOWPARALLELTEST" == "n" ]] && NPROC=1 && LOG " - Parallel Test not allowed in this problem"
 LOG " - NPROC: $NPROC"
@@ -219,6 +262,7 @@ for INPUT in $PROBLEMTEMPLATEDIR/tests/input/*; do
     LOG "$INPUT not found"
     exit 3
   fi
+  #echo "TEST: $(basename $INPUT)" >> /tmp/log
   run-testinput $INPUT &
   ((JOBSCOUNT++))
   if (( JOBSCOUNT > NPROC-1 )); then
@@ -253,21 +297,21 @@ for INPUT in $PROBLEMTEMPLATEDIR/tests/input/*; do
 	  LOG " - Rerun: It will not be RERUNNED because previous RERUN were TLE"
       fi
   fi
-  LOG ""
-  LOG "### CAGE CONTROL DATA this is for Bruno to check"
-  LOG "8<-------------------------8<------------------"
-  for f in $workdirbase/$FILE-{stderr,log.cage-run,log.timelog,log.bwraptime,log.bwrapexitcode}; do
-    wc -c "$f"|grep -q "^0 " && continue;
-    [[ "$f" == "$workdirbase/$FILE-team_output" ]] && continue
-    LOG "#### $(basename $f)"
-    LOG "$(< $f)"
-  done
-  LOG "8<-------------------------8<------------------"
-  LOG "### END CAGE CONTROL DATA"
-  LOG ""
-  LOG ""
+  # LOG ""
+  # LOG "### CAGE CONTROL DATA this is for Bruno to check"
+  # LOG "8<-------------------------8<------------------"
+  # for f in $workdirbase/$FILE-{stderr,log.cage-run,log.timelog,log.bwraptime,log.bwrapexitcode}; do
+  #   wc -c "$f"|grep -q "^0 " && continue;
+  #   [[ "$f" == "$workdirbase/$FILE-team_output" ]] && continue
+  #   LOG "#### $(basename $f)"
+  #   LOG "$(< $f)"
+  # done
+  # LOG "8<-------------------------8<------------------"
+  # LOG "### END CAGE CONTROL DATA"
+  # LOG ""
+  # LOG ""
   SMALLRESP=none
-  BWRAPEXITCODE=$(< $workdirbase/$FILE-log.bwrapexitcode)
+  #BWRAPEXITCODE=$(< $workdirbase/$FILE-log.bwrapexitcode)
   EXECTIME=$(grep '^real' $workdirbase/$FILE-log.timelog|awk '{print $NF}')
   if echo "($EXECTIME - ${TL[$LANGUAGE]}) > ${TLMOD[$LANGUAGE.drift]} "|bc -l |grep -q 1; then
     OLDRESP="$RESP"
@@ -277,22 +321,26 @@ for INPUT in $PROBLEMTEMPLATEDIR/tests/input/*; do
     ((RESPERRO++))
     ((THISRERUN==1)) && TLERERUN=n
   fi
-
-  if (( BWRAPEXITCODE != 0 )) && [[ "$SMALLRESP" != "TLE" ]] && ! grep -q signal $workdirbase/$FILE-log.timelog; then
+  if (( BWRAPEXITCODE!=0 )) && [[ "$SMALLRESP" != "TLE" ]] && ! grep -q signal $workdirbase/$FILE-log.timelog; then
     [[ "$RESP" != "Runtime Error" ]] && RESP="Runtime Error - Signaled PPID"
     SMALLRESP=TMT
     ((RESPERRO++))
     [[ ! -n "$EXECTIME" ]] && EXECTIME="$(grep '^real' $workdirbase/$FILE-log.bwraptime|awk '{print $NF}')"
-  elif (( BWRAPEXITCODE != 0 )) && ( [[ "$SMALLRESP" != "TLE" ]] || grep -q signal $workdirbase/$FILE-log.timelog ); then
+  elif (( BWRAPEXITCODE!=0 )) && ( [[ "$SMALLRESP" != "TLE" ]] || grep -q signal $workdirbase/$FILE-log.timelog ); then
     RESP="Runtime Error"
     #LOG "- $FILE Runtime Error"
     SMALLRESP=RE
     ((RESPERRO++))
   fi
 
+  #echo "DIFF: $(basename $INPUT)" > /tmp/log
   if [[ "$SMALLRESP" == "none" ]]; then
     $LANGCOMPARE $workdirbase/$FILE-team_output $PROBLEMTEMPLATEDIR/tests/output/$FILE $INPUT &> $workdirbase/$FILE-log.compare
+    #$LANGCOMPARE /tpm/out $PROBLEMTEMPLATEDIR/tests/output/$FILE $INPUT &> $workdirbase/$FILE-log.compare
     COMPAREEXIT=$?
+    echo "" > /tmp/log
+    echo "COMPAREEXIT: $COMPAREEXIT" >> /tmp/log
+    #/tpm/out >> /tmp/log
     LOG "### CHECKING SOLUTION THIS IS USUALLY A DIFF OUTPUT"
     if (( COMPAREEXIT == 4 )); then
       if (( RESPERRO == 0 )); then

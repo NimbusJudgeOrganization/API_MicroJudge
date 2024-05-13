@@ -7,7 +7,6 @@ RUN apt update && apt upgrade -y && apt install -y \
     git \
     gcc \
     bc \
-    bubblewrap \
     make \
     time \
     tzdata \
