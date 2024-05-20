@@ -1,30 +1,30 @@
-FROM ubuntu as build-image
-
+# FROM bitnami/minideb:bullseye as build-image
+FROM public.ecr.aws/lambda/python:3.12
 
 # SETUP JUDGE
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt update && apt upgrade -y && apt install -y \
+#ENV DEBIAN_FRONTEND=noninteractive
+RUN dnf install -y \
     git \
     gcc \
     bc \
     make \
     time \
     tzdata \
-    python3 \
-    python3-pip
-
+    glibc-static \
+    diffutils
 
 ENV TZ=America/Sao_Paulo
 RUN ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 
 COPY judge ${LAMBDA_TASK_ROOT}/judge
+RUN chmod +x ${LAMBDA_TASK_ROOT}/judge/build-and-test.sh
 
-RUN pip install --upgrade pip
-RUN pip install awslambdaric -t "${LAMBDA_TASK_ROOT}"
+#RUN pip install --upgrade pip
+#RUN pip install awslambdaric -t "${LAMBDA_TASK_ROOT}"
 # COPY requirements.txt ./
 #RUN pip install -r requirements.txt -t "${LAMBDA_TASK_ROOT}"
 COPY app.py ${LAMBDA_TASK_ROOT}
 
-ENTRYPOINT [ "python3", "-m", "awslambdaric" ]
+#ENTRYPOINT [ "python3", "-m", "awslambdaric" ]
 
 CMD [ "app.handler" ]
