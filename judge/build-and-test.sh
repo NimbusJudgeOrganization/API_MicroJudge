@@ -25,7 +25,7 @@ fi
 mkdir /tmp/rwdir
 workdirbase=/tmp/rwdir
 mkdir $workdirbase/cagefiles
-workdir=$workdirbase/cagefiles/
+workdir=$workdirbase/cagefiles
 
 if [[ ! -e "$workdirbase" ]]; then
   echo "Could not create $workdirbase"
@@ -121,45 +121,37 @@ fi
 LOG "# Compiling code"
 LOG ""
 
-
-# COMPILACAO
-sh $LANGCOMPILE
 mkdir /tmp/dir
-if [[ -e $PROBLEMTEMPLATEDIR/scripts/$LANGUAGE ]]; then
-  echo BIN="main" > /tmp/dir/binfile.sh
-  cp $workdirbase/main /tmp/dir
-else 
-  echo BIN="$(basename --suffix=.$LANGUAGE $SRCCODE)" > /tmp/dir/binfile.sh
-  cp $workdirbase/"$(basename --suffix=.$LANGUAGE $SRCCODE)" /tmp/dir
+
+LOGFILE=$workdir/compilelog
+
+compile() {
+    local src_files=$1
+    local output=$2
+    local flags=$3
+
+    gcc -w $flags $src_files -o $output >> $LOGFILE 2>&1
+
+    if [[ $? -ne 0 ]]; then
+        echo "Compilation Error"
+        LOG "COMPILATION ERROR"
+        LOG "$(cat $LOGFILE)"
+        exit 1
+    fi
+}
+
+if [[ -e $PROBLEMTEMPLATEDIR/scripts/$LANGUAGE/mainfunction.c ]]; then
+    # Compilação com função específica
+    cp $PROBLEMTEMPLATEDIR/scripts/$LANGUAGE/mainfunction.c /tmp/dir
+    CFLAGS=$(<$PROBLEMTEMPLATEDIR/scripts/$LANGUAGE/cflags)
+    compile "/tmp/dir/mainfunction.c $SRCCODE" "$workdirbase/main" "$CFLAGS"
+else
+    # Compilação padrão
+    compile "$SRCCODE" "$workdirbase/main" "-lm -O2 -static"
 fi
-#cp $workdirbase/main /tmp/dir
-# source $workdir/binfile.sh
-#BIN="main"
-#echo "$BIN"
-#bash cage-run.sh -w $workdir -r $LANGCOMPILE $SHIELDPARAMS\
-                    #-s $workdirbase/compile.log.stderr \
-                    #-o $workdirbase/compile.log.stdout \
-                    #-t $workdirbase/compile.log.time \
-                    #-T 30\
-                    #-B $workdirbase/compile.log.bwraptime &> $workdirbase/compile.log.cage-run
 
-#CAGERET=$?
-
-# if ! grep -q ^BIN= $workdirbase/compile.log.stdout || (( CAGERET != 0 )) ; then
-#   LOG "   COMPILATION ERROR"
-#   LOG ""
-#   LOG "CE $workdir"
-#   for f in $workdirbase/compile.log.{stdout,stderr,cage-run,time,bwraptime}; do
-#     LOG "## $f"
-#     LOG "$(< $f)"
-#     LOG ""
-#   done
-#   echo "Compilation Error"
-#   exit 1
-# fi
-# #cut -d'=' -f2 < $workdir/log.stdout
-# BIN+=( $(cut -d'=' -f2 < $workdirbase/compile.log.stdout) )
-#echo BIN=${BIN[0]} > $workdir/binfile.sh
+echo "BIN=main" > /tmp/dir/binfile.sh
+cp $workdirbase/main /tmp/dir
 
 LOG ""
 LOG ""
@@ -227,27 +219,8 @@ function run-testinput()
   local FILE=$(basename $INPUT)
   TIMELOG=$workdirbase/$FILE-log.timelog
   touch $TIMELOG
-  #echo "time -p -o $TIMELOG timeout $ETL $LANGRUN"
-
-  # $workdirbase/$FILE-team_output
-  #RUN="$LANGRUN $workdirbase/$FILE-team_output"
-  #cat $INPUT
   /usr/bin/time -p -o $TIMELOG timeout $ETL $LANGRUN
-  #cat $workdirbase/$FILE-team_output
   cat /tmp/out > $workdirbase/$FILE-team_output
-  #echo "(/usr/bin/time -p -o $TIMELOG timeout $ETL $LANGRUN) > $workdirbase/$FILE-team_output"
-  #sh $LANGRUN
-  #$BIN < $INPUT > /tmp/out
-  #time -p -o timeout $ETL sh $LANGRUN $INPUT > $workdirbase/$FILE-log.timelog # TESTANDO
-
-  # bash cage-run.sh -d $workdir -i $INPUT -o $workdirbase/$FILE-team_output \
-  #      -s $workdirbase/$FILE-stderr $SHIELDPARAMS\
-  #      -r $LANGRUN \
-  #      -t $workdirbase/$FILE-log.timelog\
-  #      -T $ETL\
-  #      -B $workdirbase/$FILE-log.bwraptime &> $workdirbase/$FILE-log.cage-run
-  # BWRAPEXITCODE=$?
-  # echo $BWRAPEXITCODE > $workdirbase/$FILE-log.bwrapexitcode
 }
 
 JOBSCOUNT=0
