@@ -1,3 +1,0 @@
-[submodule "judge"]
-	path = judge
-	url = https://github.com/NimbusJudgeOrganization/judge.git

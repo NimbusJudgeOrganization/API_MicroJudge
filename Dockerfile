@@ -1,13 +1,30 @@
-FROM ubuntu
+# FROM bitnami/minideb:bullseye as build-image
+FROM public.ecr.aws/lambda/python:3.12
 
-RUN apt update -y && apt upgrade -y
+# SETUP JUDGE
+#ENV DEBIAN_FRONTEND=noninteractive
+RUN dnf install -y \
+    git \
+    gcc \
+    bc \
+    make \
+    time \
+    tzdata \
+    glibc-static \
+    diffutils
 
-RUN apt install python3 git -y
-RUN apt install python3-venv python3-pip -y
+ENV TZ=America/Sao_Paulo
+RUN ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 
-RUN git clone https://github.com/NimbusJudgeOrganization/ec2-api.git --recursive
+COPY judge ${LAMBDA_TASK_ROOT}/judge
+RUN chmod +x ${LAMBDA_TASK_ROOT}/judge/build-and-test.sh
 
-WORKDIR /ec2-api
+#RUN pip install --upgrade pip
+#RUN pip install awslambdaric -t "${LAMBDA_TASK_ROOT}"
+# COPY requirements.txt ./
+#RUN pip install -r requirements.txt -t "${LAMBDA_TASK_ROOT}"
+COPY app.py ${LAMBDA_TASK_ROOT}
 
-# RUN source venv/bin/activate
-RUN pip install -r requirements.txt
+#ENTRYPOINT [ "python3", "-m", "awslambdaric" ]
+
+CMD [ "app.handler" ]

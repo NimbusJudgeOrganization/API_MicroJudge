@@ -1,0 +1,23 @@
+#!/bin/bash
+
+LETRAS=(q w e r t y u i o p a s d f g h j k l z x c v b n m)
+
+STRINGS=$((RANDOM%1000+1))
+COUNT=${#LETRAS[@]}
+MAIOR=0
+
+VETOR=
+echo $STRINGS
+for((i=0;i<STRINGS;i++)); do
+  TAMANHO=$((RANDOM%100+1))
+  if (( TAMANHO > MAIOR )); then
+    MAIOR=$TAMANHO
+  fi
+  for((j=0;j<TAMANHO;j++)); do
+    POSICAO=$(( RANDOM%COUNT ))
+    printf "${LETRAS[$POSICAO]}"
+  done
+  echo
+done
+
+echo $MAIOR >&2

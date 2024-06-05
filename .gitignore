@@ -1,4 +1,5 @@
 venv
 .venv
 __pycache__
-*.c
+image_push.log
+lambda_creation.log
