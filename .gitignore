@@ -3,3 +3,4 @@ venv
 __pycache__
 image_push.log
 lambda_creation.log
+.idea
