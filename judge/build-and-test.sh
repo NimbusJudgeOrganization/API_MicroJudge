@@ -130,7 +130,7 @@ compile() {
     local output=$2
     local flags=$3
 
-    gcc -w $flags $src_files -o $output >> $LOGFILE 2>&1
+    gcc -w $src_files -o $output $flags >> $LOGFILE 2>&1
 
     if [[ $? -ne 0 ]]; then
         echo "Compilation Error"
