@@ -18,6 +18,7 @@ def validate_event(event):
         if field not in event:
             raise ValueError(f"Missing required field: {field}")
 
+
 def handler(event, context):
     try:
         # Validate input
