@@ -15,8 +15,8 @@ RUN dnf install -y \
 ENV TZ=America/Sao_Paulo
 RUN ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 
-COPY judge /tmp/judge
+COPY src/judge ${LAMBDA_TASK_ROOT}/judge
 
-COPY app.py ${LAMBDA_TASK_ROOT}
+COPY src/app.py ${LAMBDA_TASK_ROOT}
 
 #CMD [ "app.handler" ]
