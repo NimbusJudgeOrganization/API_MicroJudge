@@ -1,0 +1,11 @@
+#!/bin/bash
+
+MIN=$1
+MAX=$2
+GMIN=$3
+GMAX=$4
+
+TEMPO="$((RANDOM%(MAX-MIN)+MIN))"
+((TEMPO=TEMPO*TEMPO))
+
+echo "$TEMPO $((RANDOM%(GMAX-GMIN)+GMIN))"
