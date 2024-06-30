@@ -129,8 +129,13 @@ compile() {
     local src_files=$1
     local output=$2
     local flags=$3
-
-    gcc -w $src_files -o $output $flags >> $LOGFILE 2>&1
+    
+    if [[ ${src_files##*.} == "cpp" ]];then
+        compiler="g++"
+    else
+        compiler="gcc"
+    fi
+    $compiler -w $src_files -o $output $flags >> $LOGFILE 2>&1
 
     if [[ $? -ne 0 ]]; then
         echo "Compilation Error"
