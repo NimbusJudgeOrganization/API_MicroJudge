@@ -8,7 +8,12 @@ RUN dnf install -y \
     time \
     tzdata \
     glibc-static \
-    diffutils
+    diffutils \
+    vim \
+    gcc-c++
+
+RUN yum -y groupinstall "Development Tools" 
+RUN yum -y install libstdc++-static
 
 ENV TZ=America/Sao_Paulo
 RUN ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
