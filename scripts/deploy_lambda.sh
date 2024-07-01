@@ -7,8 +7,8 @@ AWS_ACCOUNT_ID="992382630933"
 ROLE_ARN="arn:aws:iam::$AWS_ACCOUNT_ID:role/lambda-test"
 FUNCTION_NAME="lambda-test-$(date '+%d-%m-%Y-%H-%M-%S')"
 LOGFILE="lambda_creation.log"
-MEMORY_SIZE=512
-TIMEOUT=20
+MEMORY_SIZE=1024
+TIMEOUT=40
 
 > $LOGFILE
 
