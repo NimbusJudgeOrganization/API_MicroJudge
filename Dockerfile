@@ -12,8 +12,7 @@ RUN dnf install -y \
     vim \
     gcc-c++
 
-RUN yum -y groupinstall "Development Tools" 
-RUN yum -y install libstdc++-static
+RUN dnf install -y libstdc++-static
 
 ENV TZ=America/Sao_Paulo
 RUN ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
