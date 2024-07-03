@@ -16,7 +16,7 @@ LOG "Logando no ECR..."
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY_URL
 
 LOG "Buildando nova imagem..."
-docker build -t lambda_test .
+docker build -t lambda_test -f Dockerfile .
 
 FULL_IMAGE_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_NAME:latest"
 

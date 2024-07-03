@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# Variáveis
-REPOSITORY_NAME="lambda_test"
+REPOSITORY_NAME="calibreitor_tl"
 AWS_REGION="us-east-1"
 AWS_ACCOUNT_ID="992382630933"
 ROLE_ARN="arn:aws:iam::$AWS_ACCOUNT_ID:role/lambda-test"
@@ -12,12 +11,10 @@ TIMEOUT=40
 
 > $LOGFILE
 
-# Função de logging
 LOG() {
     echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" | tee -a $LOGFILE
 }
 
-# Obter a tag da última imagem publicada no repositório ECR
 LOG "Obtendo a tag da última imagem publicada no repositório ECR..."
 LATEST_TAG=$(aws ecr describe-images --repository-name $REPOSITORY_NAME --region $AWS_REGION --query 'sort_by(imageDetails,&imagePushedAt)[-1].imageTags[0]' --output text)
 
@@ -28,10 +25,8 @@ fi
 
 LOG "Última tag encontrada: $LATEST_TAG"
 
-# Construir o URI completo da imagem
 FULL_IMAGE_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_NAME:$LATEST_TAG"
 
-# Verificar se a imagem existe no ECR
 LOG "Verificando a existência da imagem $FULL_IMAGE_URI no ECR..."
 IMAGE_EXISTS=$(aws ecr describe-images --repository-name $REPOSITORY_NAME --image-ids imageTag=$LATEST_TAG --region $AWS_REGION --query 'imageDetails[0].imageDigest' --output text)
 
@@ -42,7 +37,6 @@ fi
 
 LOG "A imagem $FULL_IMAGE_URI foi encontrada e é válida."
 
-# Criar a função Lambda
 LOG "Criando a função Lambda com a imagem $FULL_IMAGE_URI..."
 aws lambda create-function \
   --function-name $FUNCTION_NAME \
