@@ -21,13 +21,14 @@ def encode_to_base64(file_path):
         return None
 
 
-def invoke_lambda(code_dir, question):
+def invoke_lambda(code_dir, problemid, language):
     code_path = os.path.join(os.getcwd(), code_dir)
     encoded_content = encode_to_base64(code_path)
     payload = {
-        "question": question,
-        "encoded_base64_submition": encoded_content,
-        "file_name": str(question + '.c')
+        'problemid' : problemid,
+        'file64': encoded_content,
+        'filename': str(str(problemid + '.')+ language),
+        'language': language
     }
     payload = json.dumps(payload)
 
