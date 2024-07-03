@@ -1,0 +1,3 @@
+TLMOD[calibrafactor]=1.40
+#ULIMITS[-u]=1000000
+ALLOWPARALLELTEST=n
