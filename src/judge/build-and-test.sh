@@ -220,16 +220,18 @@ TOTALTESTS=$(ls -d $PROBLEMTEMPLATEDIR/tests/input/*|wc -l)
 function run-testinput()
 {
   local INPUT=$1
-  cp $INPUT /tmp/in
+  local TEST_PATH=$(basename "$INPUT")
+  mkdir /tmp/$TEST_PATH
+  cp $INPUT /tmp/$TEST_PATH/in
   local FILE=$(basename $INPUT)
   TIMELOG=$workdirbase/$FILE-log.timelog
   touch $TIMELOG
-  /usr/bin/time -p -o $TIMELOG timeout $ETL $LANGRUN
-  cat /tmp/out > $workdirbase/$FILE-team_output
+  /usr/bin/time -p -o $TIMELOG timeout $ETL $LANGRUN $TEST_PATH
+  cat /tmp/$TEST_PATH/out > $workdirbase/$FILE-team_output
 }
 
 JOBSCOUNT=0
-ALLOWPARALLELTEST="n"
+ALLOWPARALLELTEST="y"
 
 NPROC=$(nproc)
 [[ "$ALLOWPARALLELTEST" == "n" ]] && NPROC=1 && LOG " - Parallel Test not allowed in this problem"
