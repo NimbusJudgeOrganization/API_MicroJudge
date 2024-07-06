@@ -4,13 +4,16 @@ from subprocess import Popen, PIPE
 from pathlib import Path
 import json
 import base64
+import re
 import uuid
 import boto3
+
 
 def cmdline(command):
     process = Popen(args=command, stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = process.communicate()
     return stdout, stderr, process.returncode
+
 
 def validate_event(event):
     required_fields = ['problemid', 'file64', 'filename', 'language']
@@ -39,13 +42,21 @@ def handler(event, context):
         with open(temp_file_path, 'wb') as f:
             f.write(file_content)
        
-        command = f'bash judge/build-and-test.sh {language} /tmp/{filename} judge/{problemid}'
+        build_and_test_response = '/tmp/build_and_test_response'
+        command = f'/usr/bin/time -p bash judge/build-and-test.sh {language} /tmp/{filename} judge/{problemid} > {build_and_test_response}'
         stdout, stderr, returncode = cmdline(command)
         
         if returncode != 0:
             raise RuntimeError(f"Command failed with return code {returncode}: {stderr.decode('utf-8')}")
-        
-        build_and_test_output = stdout.decode('utf-8')
+
+        with open(build_and_test_response, 'r') as f:
+            build_and_test_output = f.read()
+
+        execution_time_output = stderr.decode('utf-8')
+        time_pattern = re.compile(r'^user (\d+\.\d+)$', re.MULTILINE)
+        match = time_pattern.search(execution_time_output)
+        execution_time = float(match.group(1))
+
         lines = build_and_test_output.strip().split('\n')
         status = lines[-1].split(',')[0]
         percentage = int(lines[-1].split(',')[1].replace('p', ''))
@@ -65,13 +76,21 @@ def handler(event, context):
             print(f"Successfully uploaded {log_file} to s3://{s3_bucket_name}/{s3_key}")
         except Exception as e:
                 raise RuntimeError(f"Failed to upload {tl_file_path} to S3: {str(e)}")
+
+        with open(log_file, 'r') as f:
+            log_content = f.read()
+
+        log64 = base64.b64encode(log_content.encode('utf-8')).decode('utf-8')
+
         # clean dir 
         cmdline('rm -rf /tmp/*')
 
         response_body = {
             'status': status,
             'percentage': percentage,
-            'logid': submission_id 
+            'logid': submission_id,
+            'log64': log64,
+            'execution_time': execution_time
         }
         
         return {
@@ -83,10 +102,10 @@ def handler(event, context):
             'statusCode': 400,
             'body': json.dumps({'error': str(ve)})
         }
-    except RuntimeError as re:
+    except RuntimeError as re_err:
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': str(re)})
+            'body': json.dumps({'error': str(re_err)})
         }
     except Exception as e:
         return {
