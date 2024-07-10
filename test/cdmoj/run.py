@@ -1,4 +1,3 @@
-# 1000 submissions of the question fso-escalonador-round-robin in nimbus and cd-moj
 import boto3
 import base64
 import json
