@@ -1,0 +1,3 @@
+[submodule "src/judge"]
+	path = src/judge
+	url = git@github.com:NimbusJudgeOrganization/JUDGE_MicroJudge.git
