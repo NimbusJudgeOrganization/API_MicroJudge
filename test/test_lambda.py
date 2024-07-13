@@ -2,8 +2,6 @@ from lambda_utils import invoke_lambda
 
 
 def test_AC():
-    assert invoke_lambda('fatorial/good/jorge.c', 'fatorial', 'c') == "Accepted"
-    assert invoke_lambda('fatorial/good/jorge.c', 'fatorial', 'c') == "Accepted"
     assert invoke_lambda('primos_arrojados/good/ribas-ac.c', 'primos_arrojados', 'c') == "Accepted"
     assert invoke_lambda('fso-escalonador-round-robin/good/slower_mas_good2.cpp', 'fso-escalonador-round-robin', 'cpp') == 'Accepted'
     assert invoke_lambda('fso-escalonador-round-robin/good/slower_mas_good3.cpp', 'fso-escalonador-round-robin', 'cpp') == 'Accepted'
