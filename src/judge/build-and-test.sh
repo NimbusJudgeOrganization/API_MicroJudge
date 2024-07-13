@@ -21,7 +21,7 @@ RUNALL=${RUNALL:=no}
 if [[ -e "/tmp/rwdir" ]]; then
   rm -rf /tmp/rwdir
 fi
-
+STARTTIME=$EPOCHSECONDS
 mkdir /tmp/rwdir
 workdirbase=/tmp/rwdir
 mkdir $workdirbase/cagefiles
@@ -361,10 +361,11 @@ for INPUT in $PROBLEMTEMPLATEDIR/tests/input/*; do
   [[ "$RESP" != "Accepted" ]] && [[ "$RESP" != "Accepted,PE" ]] && [[ "$RESP" != "Presentation Error" ]] && [[ "$RUNALL" == "no" ]]  && break
 
 done
-
+((TOTALTIME=EPOCHSECONDS-STARTTIME))
 LOG ""
 LOG ""
 LOG "# FINAL VEREDICT"
+LOG "  - Total build-and-test time: $TOTALTIME seconds"
 LOG "  - $RESP"
 LOG "  - $CORRECT correct in $TOTALTESTS , $((CORRECT*100/TOTALTESTS))%"
 
