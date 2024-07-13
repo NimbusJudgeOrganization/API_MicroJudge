@@ -10,6 +10,7 @@ import re
 from prettytable import PrettyTable
 
 resp = { 'AC': 'Accepted', 'TL': 'Time Limit Exceeded'}
+resp_invesed = { 'Accepted': 'AC', 'Time Limit Exceeded': 'TL'}
 
 with open('fso-escalonador-round-robin.json') as fp:
     probs1 = json.load(fp)
@@ -24,7 +25,6 @@ def process_log(log64, status, expected_status, logid, exec_time):
 
     pattern = r'Execution Time: ([\d.]+)'
     matches = re.findall(pattern, log_content, re.MULTILINE)
-
     total_time = 0.0
     test_count = 0
 
@@ -33,13 +33,17 @@ def process_log(log64, status, expected_status, logid, exec_time):
         test_case_time = float(match)
         total_time += test_case_time
 
+    pattern_build_and_test_time = r'Total build-and-test time: ([\d.]+) seconds'
+    match = re.search(pattern_build_and_test_time, log_content)
+    if match:
+        build_and_test_time = match.group(1)
+
     average_time = total_time / test_count if test_count > 0 else 0
-    create_log(logid, 'nimbus', float(exec_time), test_count, total_time, average_time, status, resp[expected_status])
-    # logs.append([status, resp[expected_status], f'{exec_time:.5f}', f'{total_time:.5f}', f'{average_time:.5f}', logid])
-    logs.append([status, resp[expected_status], f'{exec_time:.3f}', f'{total_time:.3f}', f'{average_time:.3f}'])
+    create_log(logid, 'nimbus', build_and_test_time, test_count, total_time, average_time, status, resp[expected_status])
+    logs.append([resp_invesed[status], expected_status, build_and_test_time, f'{total_time:.3f}', f'{average_time:.3f}', logid])
 
 
-def create_log(logid, judge, full_exec_time, test_case_lenght, test_case_sum_time, test_case_avg_time, status, expected):
+def create_log(logid, judge, build_and_test_time, test_case_lenght, test_case_sum_time, test_case_avg_time, status, expected):
     if judge != 'cdmoj' and judge != 'nimbus':
         raise Exception('Unexpected judge name, please use <cdmoj> or <nimbus>')
 
@@ -49,7 +53,7 @@ def create_log(logid, judge, full_exec_time, test_case_lenght, test_case_sum_tim
     item = {
             'logid': logid,
             'judge': judge,
-            'full_exec_time': str(full_exec_time),
+            'build_and_test_time': str(build_and_test_time),
             'test_case_lenght': str(test_case_lenght),
             'test_case_sum_time': str(test_case_sum_time),
             'test_case_avg_time': str(test_case_avg_time),
@@ -90,6 +94,7 @@ def invoke_lambda(code_dir, problemid, language, expected_status):
     lambda_client = boto3.client("lambda", region_name="us-east-1")
 
     functions = lambda_client.list_functions()["Functions"]
+    functions = [f for f in functions if 'lambda-test' in f['FunctionName']] 
     sorted_functions = sorted(functions, key=lambda x: x["LastModified"], reverse=True)
     target_function_name = sorted_functions[0]["FunctionName"]
 
@@ -110,13 +115,14 @@ def invoke_lambda(code_dir, problemid, language, expected_status):
 
 
 def invoke_random_problem():
-    category = random.choice(list(probs2.keys()))
-    problem = random.choice(probs2[category])
+    category = random.choice(list(probs1.keys()))
+    problem = random.choice(probs1[category])
     invoke_lambda(problem['file'], problem['problem'], problem['language'], str(category))
 
 
 if __name__ == '__main__':
-    jobs_count = int(input('Insert job quantity: ' ))
+    # jobs_count = int(input('Insert job quantity: ' ))
+    jobs_count = 10
     print(f'Estimate time for invoking lambdas: {jobs_count*1.15}s')
     print('Starting Jobs...')
     threads = []
@@ -130,7 +136,7 @@ if __name__ == '__main__':
         t.join()
 
     table = PrettyTable()
-    table.field_names = ["Status", "Expected", "Execution Time", "Test Case: Total Time", "Test Case: Average Execution Time"]
+    table.field_names = ["Status", "Expected", "build-and-test Time", "TC: Total Time", "TC: Avg Exec Time", "logid"]
 
     for log in logs:
         table.add_row(log)

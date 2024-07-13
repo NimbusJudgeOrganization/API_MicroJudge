@@ -35,9 +35,10 @@ def invoke_lambda(code_dir, problemid, language):
     lambda_client = boto3.client("lambda", region_name="us-east-1")
 
     functions = lambda_client.list_functions()["Functions"]
+    functions = [f for f in functions if 'lambda-test' in f['FunctionName']] 
     sorted_functions = sorted(functions, key=lambda x: x["LastModified"], reverse=True)
     target_function_name = sorted_functions[0]["FunctionName"]
-
+    print(f'function name: {target_function_name}')
     response = lambda_client.invoke(
         FunctionName=target_function_name,
         InvocationType="RequestResponse",
