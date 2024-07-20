@@ -48,7 +48,8 @@ def create_log(logid, judge, build_and_test_time, test_case_lenght, test_case_su
         raise Exception('Unexpected judge name, please use <cdmoj> or <nimbus>')
 
     dynamo = boto3.resource('dynamodb')
-    table = dynamo.Table('cdmoj_vs_nimbus_fso-escalonador-round-robin')
+    # table = dynamo.Table('nimbus_fso-escalonador-round-robin')
+    table = dynamo.Table('nimbus_not_parallel_fso-escalonador-round-robin')
 
     item = {
             'logid': logid,
@@ -121,8 +122,8 @@ def invoke_random_problem():
 
 
 if __name__ == '__main__':
-    # jobs_count = int(input('Insert job quantity: ' ))
-    jobs_count = 10
+    jobs_count = int(input('Insert job quantity: ' ))
+    # jobs_count = 5
     print(f'Estimate time for invoking lambdas: {jobs_count*1.15}s')
     print('Starting Jobs...')
     threads = []

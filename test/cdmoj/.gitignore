@@ -1,3 +1,5 @@
 fso-escalonador-round-robin.json
 primos_arrojados.json
 response_*
+cdmoj_push_jobs.py
+process_jobs.py
